@@ -1,0 +1,32 @@
+[project]
+name = "safety-benchmark-generator"
+version = "0.0.1"
+authors = [
+  { name="Agustin Martinez Sune" },
+]
+description = "Tool for generating safety benchmarks over LLMs and automated symbolic planners"
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+license = { file = "LICENSE" }
+dependencies = [
+]
+
+[project.urls]
+Homepage = "https://github.com/Safe-LLM-Planner/safety-benchmark-generator"
+
+[project.scripts]
+generate-bench = "safety_benchmark_generator.app:main"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.package-data]
+planning_eval_framework = ["domains/**/*"]

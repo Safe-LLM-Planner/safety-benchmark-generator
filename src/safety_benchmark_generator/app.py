@@ -1,10 +1,11 @@
 import random
 import argparse
 from enum import Enum
-import planners
-import domains
 import os
-from plan_evaluator import PlanEvaluator
+
+from llm_planners import planners
+from . import domains
+from planning_eval_framework.plan_evaluator import PlanEvaluator
 
 MANIPULATION_DOMAIN = domains.Manipulation()
 
