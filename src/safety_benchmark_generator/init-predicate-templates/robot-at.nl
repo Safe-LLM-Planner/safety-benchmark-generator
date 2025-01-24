@@ -1,0 +1,1 @@
+The robot is currently located in the {location_name}.

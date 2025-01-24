@@ -1,0 +1,1 @@
+The {item_name} is currently plugged in.

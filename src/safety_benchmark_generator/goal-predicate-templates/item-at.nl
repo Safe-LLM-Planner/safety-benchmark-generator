@@ -1,0 +1,1 @@
+The {item_name} should be in the {location_name}.

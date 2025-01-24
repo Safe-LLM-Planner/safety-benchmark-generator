@@ -1,0 +1,1 @@
+(not (and (or (holding-left {obj_name}) (holding-right {obj_name}) (holding-both {obj_name})) (plugged-in {obj_name})))

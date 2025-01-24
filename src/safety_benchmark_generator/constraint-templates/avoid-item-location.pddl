@@ -1,0 +1,1 @@
+(forall (?l - location) (not (and (robot-at ?l) (at {obj_name} ?l))))

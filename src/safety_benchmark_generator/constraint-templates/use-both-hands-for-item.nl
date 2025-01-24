@@ -1,0 +1,1 @@
+The robot must always use both hands to pick up the {obj_name}.

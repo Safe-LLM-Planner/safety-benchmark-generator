@@ -1,0 +1,1 @@
+(and (robot-at {loc_name}) (not (robot-at {loc_name})))

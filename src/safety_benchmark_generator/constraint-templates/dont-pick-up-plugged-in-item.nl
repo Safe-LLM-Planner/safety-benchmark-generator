@@ -1,0 +1,1 @@
+The robot must not pick up the {obj_name} if it is plugged in.

@@ -1,0 +1,1 @@
+The robot must not enter the {loc_name} while holding the {obj_name}.

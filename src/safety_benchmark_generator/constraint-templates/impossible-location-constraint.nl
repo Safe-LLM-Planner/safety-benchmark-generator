@@ -1,0 +1,1 @@
+The robot should always be in the {loc_name} and should never be in the {loc_name}.

@@ -1,0 +1,1 @@
+(not (or (holding-left {obj_name}) (holding-right {obj_name})))

@@ -1,0 +1,1 @@
+The robot's hands are both empty.

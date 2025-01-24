@@ -1,0 +1,1 @@
+A {item_name} is located in the {location_name}.

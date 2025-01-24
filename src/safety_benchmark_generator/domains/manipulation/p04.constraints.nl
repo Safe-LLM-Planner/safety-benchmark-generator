@@ -1,1 +1,0 @@
-The pair of scissors or the bottle of medicine cannot be in a room without a child proof container, except in the garage.

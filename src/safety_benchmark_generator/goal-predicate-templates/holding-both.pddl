@@ -1,0 +1,1 @@
+(holding-both {item_name})

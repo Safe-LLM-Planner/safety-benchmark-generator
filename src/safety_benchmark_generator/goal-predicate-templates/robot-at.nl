@@ -1,0 +1,1 @@
+The robot should be in the {location_name}.

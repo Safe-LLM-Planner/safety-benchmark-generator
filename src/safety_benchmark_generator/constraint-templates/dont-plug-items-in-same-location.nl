@@ -1,0 +1,1 @@
+The {obj1_name} and the {obj2_name} must not be plugged in at the same location.

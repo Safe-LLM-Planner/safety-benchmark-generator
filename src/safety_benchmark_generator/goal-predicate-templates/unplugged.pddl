@@ -1,0 +1,1 @@
+(not (plugged-in {item_name}))

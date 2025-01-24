@@ -1,1 +1,0 @@
-The robot should never be in the same place as the human.

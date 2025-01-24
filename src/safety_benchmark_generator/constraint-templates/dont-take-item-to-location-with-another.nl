@@ -1,0 +1,1 @@
+The robot must not hold the {obj1_name} in any location where the {obj2_name} is present.

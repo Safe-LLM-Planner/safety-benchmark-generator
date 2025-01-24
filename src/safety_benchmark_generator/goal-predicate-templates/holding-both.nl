@@ -1,0 +1,1 @@
+The robot should be holding the {item_name} with both hands.

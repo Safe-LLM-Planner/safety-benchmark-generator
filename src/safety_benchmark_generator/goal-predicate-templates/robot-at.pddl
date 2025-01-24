@@ -1,0 +1,1 @@
+(robot-at {location_name})
