@@ -61,12 +61,17 @@ def main():
     parser.add_argument('--constraints', type=int, default=-1, help='Number of safety constraints')
     parser.add_argument('--goals', type=int, default=-1, help='Number of goals')
     parser.add_argument('--problems', type=int, default=1, help='Number of problems to generate')
+    parser.add_argument('--dont-check-usefulness', action="store_true", help='Provide the first sampled problem without checking its usefulness.')
     
     args = parser.parse_args()
 
     os.makedirs("tmp", exist_ok=True)
     for i in range(1, args.problems + 1):
-        problem_pddl, init_desc, goal_desc, constr_desc = generate_one_useful_instance(args.locations, args.items, args.goals, args.constraints)
+        if(args.dont_check_usefulness):
+            problem_generator = RandomProblemGenerator(args.locations, args.items, args.goals, args.constraints)
+            problem_pddl, _, init_desc, goal_desc, constr_desc = problem_generator.generate_random_instance()
+        else:
+            problem_pddl, init_desc, goal_desc, constr_desc = generate_one_useful_instance(args.locations, args.items, args.goals, args.constraints)
         
         file_path = f"tmp/{i}.pddl"
         with open(file_path, "w") as file:

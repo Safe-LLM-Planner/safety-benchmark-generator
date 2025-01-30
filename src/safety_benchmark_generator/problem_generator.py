@@ -236,11 +236,15 @@ class RandomProblemGenerator:
         
         all_safety_constraints = []
 
-        if(self.num_constraints == 0):
+        if(self.num_constraints == -1):
             locations = random.sample(ALL_LOCATIONS, self.num_locations)
             items = random.sample(ALL_ITEMS, self.num_items)
+
             init_state_generator = RandomInitialStateGenerator(locations, items)
             initial_state, items_locations = init_state_generator.generate_random_initial_state()
+            
+            constraints_generator = SafetyConstraintsGenerator(locations, items)
+            selected_safety_constraints = constraints_generator.generate_safety_constraints()
         else:
             while(len(all_safety_constraints) < self.num_constraints):
                 locations = random.sample(ALL_LOCATIONS, self.num_locations)
@@ -252,7 +256,8 @@ class RandomProblemGenerator:
                 constraints_generator = SafetyConstraintsGenerator(locations, items)
                 all_safety_constraints = constraints_generator.generate_safety_constraints()
         
-        selected_safety_constraints = random.sample(all_safety_constraints, self.num_constraints)
+            selected_safety_constraints = random.sample(all_safety_constraints, self.num_constraints)
+
         goals_generator = RandomGoalGenerator(locations, items, items_locations)
         goals = goals_generator.generate_random_goals()
         if self.num_goals == -1:
