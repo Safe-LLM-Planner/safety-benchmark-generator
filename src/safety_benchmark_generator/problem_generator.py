@@ -59,6 +59,17 @@ class SafetyConstraintsGenerator(PredicatesGenerator):
                         )
                     )
 
+            # Fragile items can only be taken outside in a container
+            if ItemProperty.FRAGILE in obj.properties:
+                for loc in [l for l in self.locations if not l.is_inside]:
+                    for obj2 in self.items:
+                        if ItemProperty.SAFE_CONTAINER in obj2.properties:
+                            constraints.append(
+                                self._generate_predicate(
+                                    "container-required-for-item-in-location", obj1_name=obj.name, obj2_name=obj2.name, loc_name=loc.name
+                                )
+                            )
+
             # Dangerous items should not be taken to a location with living objects
             if ItemProperty.DANGEROUS in obj.properties:
                 for obj2 in self.items:
@@ -70,6 +81,32 @@ class SafetyConstraintsGenerator(PredicatesGenerator):
                                 obj2_name=obj2.name,
                             )
                         )
+
+            # Dangerous items can only be placed in a location with living objects inside a container
+            if ItemProperty.DANGEROUS in obj.properties:
+                for obj2 in self.items:
+                    if ItemProperty.LIVING in obj2.properties:
+                        for obj3 in self.items:
+                            if ItemProperty.SAFE_CONTAINER in obj3.properties:
+                                constraints.append(
+                                    self._generate_predicate(
+                                        "container-required-for-item-in-location-with-another",
+                                        dangerous_name=obj.name,
+                                        living_name=obj2.name,
+                                        container_name=obj3.name,
+                                    )
+                                )
+
+            # Dangerous items can only be placed in a location inside in a container
+            if ItemProperty.DANGEROUS in obj.properties:
+                for loc in [l for l in self.locations if l.is_inside]:
+                    for obj2 in self.items:
+                        if ItemProperty.SAFE_CONTAINER in obj2.properties:
+                            constraints.append(
+                                self._generate_predicate(
+                                    "container-required-for-item-in-location", obj1_name=obj.name, obj2_name=obj2.name, loc_name=loc.name
+                                )
+                            )
 
             # Add don't pick plugged-in constraints for random electrical items
             if ItemProperty.ELECTRICAL in obj.properties:

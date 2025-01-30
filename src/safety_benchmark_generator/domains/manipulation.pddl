@@ -1,5 +1,5 @@
 (define (domain manipulation)
-    (:requirements :strips :typing)
+    (:requirements :strips :typing :conditional-effects :disjunctive-preconditions)
     
     (:types 
         location 
@@ -14,15 +14,22 @@
         (right-hand-empty)
         (holding-left ?o - item)   ; Object held in left hand
         (holding-right ?o - item)  ; Object held in right hand
-        (holding-both ?o - item)  ; Object held in right hand
+        (holding-both ?o - item)  ; Object held in both hand
         (plugged-in ?e - electrical-item)
     )
 
     (:action go-to
         :parameters (?from ?to - location)
         :precondition (and (robot-at ?from))
-        :effect (and (robot-at ?to)
+         :effect (and (robot-at ?to)
                      (not (robot-at ?from))
+                     (forall (?e - electrical-item)
+                        (and
+                        (when (holding-left ?e) (not (plugged-in ?e)))
+                        (when (holding-right ?e) (not (plugged-in ?e)))
+                        (when (holding-both ?e) (not (plugged-in ?e)))
+                        )
+                     )
         )
     )
 
@@ -84,13 +91,21 @@
 
     (:action unplug
         :parameters (?e - electrical-item ?l - location)
-        :precondition (and (at ?e ?l) (robot-at ?l) (plugged-in ?e))
+        :precondition (and (at ?e ?l) 
+                           (robot-at ?l)
+                           (plugged-in ?e)
+                           (or (left-hand-empty) (right-hand-empty))
+        )
         :effect (and (not (plugged-in ?e)))
     )
 
     (:action plug-in
         :parameters (?e - electrical-item ?l - location)
-        :precondition (and (at ?e ?l) (robot-at ?l) (not (plugged-in ?e)))
+        :precondition (and (at ?e ?l) 
+                           (robot-at ?l) 
+                           (not (plugged-in ?e))
+                           (or (left-hand-empty) (right-hand-empty))
+        )
         :effect (and (plugged-in ?e))
     )
 )

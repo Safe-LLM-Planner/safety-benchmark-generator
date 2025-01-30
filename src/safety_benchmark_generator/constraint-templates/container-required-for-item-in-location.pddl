@@ -1,0 +1,1 @@
+(imply (at {obj1_name} {loc_name}) (at {obj2_name} {loc_name}))

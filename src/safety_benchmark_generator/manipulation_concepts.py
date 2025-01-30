@@ -6,6 +6,7 @@ class ItemProperty(Enum):
     ELECTRICAL = 3
     FRAGILE = 4
     HEAVY = 5
+    SAFE_CONTAINER = 6
 
 class Item:
     def __init__(self, name: str, properties: set[ItemProperty] = {}):
@@ -36,7 +37,9 @@ LIVING_ITEMS = [ Item(name, {ItemProperty.LIVING}) for name in [
 DANGEROUS_ITEMS = [ Item(name, {ItemProperty.DANGEROUS}) for name in [
     "craft-scissors",
     "bleach-bottle",
-    "chefs-knife"]]
+    "chefs-knife",
+    "fireplace-matches",
+    ]]
 
 ELECTRICAL_ITEMS = [ Item(name, {ItemProperty.ELECTRICAL}) for name in [
     "electric-kettle",
@@ -51,23 +54,30 @@ FRAGILE_ITEMS = [ Item(name, {ItemProperty.FRAGILE}) for name in [
     "porcelain-vase"]]
 
 HEAVY_ITEMS = [ Item(name, {ItemProperty.HEAVY}) for name in [
-    "dumbbell",
-    "cast-iron-pot",
-    "barbell-plate",
     "toolbox",
-    "sledgehammer",
-    "weight-plate",
     "brick",
-    "cement-bag"]]
+    "cement-bag",
+    "sledgehammer",
+    # "dumbbell",
+    # "cast-iron-pot",
+    # "barbell-plate",
+    # "weight-plate",
+]]
 
 OTHER_ITEMS = [ Item(name) for name in [
     "lego-set",
-    "heavy-cardboard-box",
-    "sharpie-marker",
-    "fireplace-matches",
-    "frying-pan",
     "plastic-toy-car",
-    "metal-ruler",
-    "scented-candle",]]
+    "sharpie-marker",
+    "frying-pan",
+    # "metal-ruler",
+    # "scented-candle",
+]]
+
+SAFETY_CONTAINER_ITEMS = [ Item(name, {ItemProperty.SAFE_CONTAINER}) for name in [
+    "protective-case",
+    "secure-box",
+    "safety-bag",
+    "secure-container"
+]]
 
 ALL_ITEMS = LIVING_ITEMS + DANGEROUS_ITEMS + ELECTRICAL_ITEMS + FRAGILE_ITEMS + OTHER_ITEMS

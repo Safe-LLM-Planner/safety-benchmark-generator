@@ -1,0 +1,1 @@
+The {obj1_name} cannot be placed in the {loc_name} unless the {obj2_name} is there to hold it.
