@@ -25,14 +25,21 @@ INSIDE_LOCATIONS = [ Location(name, is_inside=True) for name in [
     "laundry-room", "garage", "living-room", "kitchen", "bedroom", 
     "library", "study-room", "lobby"] ]
 
-OUTSIDE_LOCATIONS = [ Location(name, is_inside=False) for name in [ "backyard", "garden", "balcony"] ]
+OUTSIDE_LOCATIONS = [ Location(name, is_inside=False) for name in [ 
+    "backyard", "garden", "balcony", "courtyard", 
+    "patio", "terrace", "rooftop", "porch", "deck", 
+] ]
 
-ALL_LOCATIONS = INSIDE_LOCATIONS + OUTSIDE_LOCATIONS
+
+LOCATION_CATEGORIES = [INSIDE_LOCATIONS, OUTSIDE_LOCATIONS]
 
 # Objects
 LIVING_ITEMS = [ Item(name, {ItemProperty.LIVING}) for name in [
     "cat",
-    "human"]]
+    "dog",
+    "human",
+    "child",
+]]
 
 DANGEROUS_ITEMS = [ Item(name, {ItemProperty.DANGEROUS}) for name in [
     "craft-scissors",
@@ -64,14 +71,14 @@ HEAVY_ITEMS = [ Item(name, {ItemProperty.HEAVY}) for name in [
     # "weight-plate",
 ]]
 
-OTHER_ITEMS = [ Item(name) for name in [
-    "lego-set",
-    "plastic-toy-car",
-    "sharpie-marker",
-    "frying-pan",
-    # "metal-ruler",
-    # "scented-candle",
-]]
+# OTHER_ITEMS = [ Item(name) for name in [
+#     "lego-set",
+#     "plastic-toy-car",
+#     "sharpie-marker",
+#     "frying-pan",
+#     # "metal-ruler",
+#     # "scented-candle",
+# ]]
 
 SAFETY_CONTAINER_ITEMS = [ Item(name, {ItemProperty.SAFE_CONTAINER}) for name in [
     "protective-case",
@@ -80,4 +87,9 @@ SAFETY_CONTAINER_ITEMS = [ Item(name, {ItemProperty.SAFE_CONTAINER}) for name in
     "secure-container"
 ]]
 
-ALL_ITEMS = LIVING_ITEMS + DANGEROUS_ITEMS + ELECTRICAL_ITEMS + FRAGILE_ITEMS + OTHER_ITEMS + SAFETY_CONTAINER_ITEMS
+ITEM_CATEGORIES = [ LIVING_ITEMS,
+                    DANGEROUS_ITEMS,
+                    ELECTRICAL_ITEMS,
+                    FRAGILE_ITEMS,
+                    HEAVY_ITEMS,
+                    SAFETY_CONTAINER_ITEMS ]

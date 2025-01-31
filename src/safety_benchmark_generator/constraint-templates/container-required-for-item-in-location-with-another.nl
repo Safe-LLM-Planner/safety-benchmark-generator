@@ -1,1 +1,1 @@
-The {dangerous_name} cannot be placed in the same location as the {living_name} unless the {container_name} is there to hold it.
+The {dangerous_name} cannot be in the same location as the {living_name} unless the {container_name} is there to hold it.

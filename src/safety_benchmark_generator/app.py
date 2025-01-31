@@ -8,12 +8,17 @@ from .problem_generator import RandomProblemGenerator
 
 MANIPULATION_DOMAIN = domains.Manipulation()
 
-def is_useful_instance(pddl_problem, pddl_problem_wo_constraints, init_desc, goal_desc, constr_desc):
+def is_useful_instance(pddl_problem, pddl_problem_wo_constraints, init_desc, goal_desc, constr_desc, timeout):
     pddl_domain = MANIPULATION_DOMAIN.get_domain_pddl()
 
-    if is_safety_non_trivial_1(pddl_problem, pddl_problem_wo_constraints, init_desc, goal_desc, constr_desc):
-        print("computing w/constraints non optimal")
-        sol_constraints = planners.run_fast_downward_planner(pddl_domain, pddl_problem, optimality=False)
+    sol_wo_constraints = planners.run_fast_downward_planner(pddl_domain, pddl_problem_wo_constraints, optimality=True, heuristic="hmax()", timeout=timeout)
+    print("wo/constraints optimal finished")
+    length_sol_wo_constraints = 0 if sol_wo_constraints is None else len(sol_wo_constraints.splitlines())
+
+    if length_sol_wo_constraints == 0:
+        return False
+    elif is_safety_non_trivial_1(pddl_problem, length_sol_wo_constraints, timeout=timeout):
+        sol_constraints = planners.run_fast_downward_planner(pddl_domain, pddl_problem, optimality=False, timeout=timeout)
         sol_constraints_length = 0 if sol_constraints is None else len(sol_constraints.splitlines())
         print("w/constraints non optimal finished")
         if sol_constraints is not None:
@@ -21,35 +26,33 @@ def is_useful_instance(pddl_problem, pddl_problem_wo_constraints, init_desc, goa
     
     return False
 
-def is_safety_non_trivial_1(pddl_problem, pddl_problem_wo_constraints, init_desc, goal_desc, constr_desc):
+def is_safety_non_trivial_1(pddl_problem, length_sol_wo_constraints, timeout):
     pddl_domain = MANIPULATION_DOMAIN.get_domain_pddl()
 
-    sol_wo_constraints = planners.run_fast_downward_planner(pddl_domain, pddl_problem_wo_constraints, optimality=True, lm_cut=True)
-    print("wo/constraints optimal finished")
-    sol_wo_constraints_length = 0 if sol_wo_constraints is None else len(sol_wo_constraints.splitlines())
-    sol_constraints_bounded = planners.run_fast_downward_planner(pddl_domain, pddl_problem, optimality=True, bound=sol_wo_constraints_length+1)
+    sol_constraints_bounded = planners.run_fast_downward_planner(pddl_domain, pddl_problem, optimality=True, bound=length_sol_wo_constraints+1, timeout=timeout)
     print("w/constraints bounded optimal finished")
 
     return sol_constraints_bounded is None
 
-def is_safety_non_trivial_2(pddl_problem, pddl_problem_wo_constraints, init_desc, goal_desc, constr_desc):
-    pddl_domain = MANIPULATION_DOMAIN.get_domain_pddl()
+# def is_safety_non_trivial_2(pddl_problem, pddl_problem_wo_constraints, init_desc, goal_desc, constr_desc):
+#     pddl_domain = MANIPULATION_DOMAIN.get_domain_pddl()
 
-    sol_wo_constraints = planners.run_fast_downward_planner(pddl_domain, pddl_problem_wo_constraints, optimality=True, lm_cut=True)
-    print("wo/constraints optimal finished")
+#     sol_wo_constraints = planners.run_fast_downward_planner(pddl_domain, pddl_problem_wo_constraints, optimality=True, heuristic="hmax()")
+#     print("wo/constraints optimal finished")
     
-    evaluator = PlanEvaluator(pddl_domain, pddl_problem, sol_wo_constraints)
-    evaluator.try_simulation()
-    return not evaluator.is_safe()
+#     evaluator = PlanEvaluator(pddl_domain, pddl_problem, sol_wo_constraints)
+#     evaluator.try_simulation()
+#     return not evaluator.is_safe()
 
-def generate_one_useful_instance(num_locations, num_items, num_goals, num_constraints):
+def generate_one_useful_instance(num_locations, num_items, num_goals, num_constraints, planner_timeout):
     pddl_problem = None
     useful = False
     while(not useful):
         print("Trying...")
         problem_generator = RandomProblemGenerator(num_locations, num_items, num_goals, num_constraints)
-        pddl_problem, pddl_problem_wo_constraints, init_desc, goal_desc, constr_desc = problem_generator.generate_random_instance()
-        useful = is_useful_instance(pddl_problem, pddl_problem_wo_constraints, init_desc, goal_desc, constr_desc)
+        problem_generator.generate_random_instance()
+        pddl_problem, pddl_problem_wo_constraints, init_desc, goal_desc, constr_desc = problem_generator.show_pddl()
+        useful = is_useful_instance(pddl_problem, pddl_problem_wo_constraints, init_desc, goal_desc, constr_desc, timeout=planner_timeout)
 
     return pddl_problem, init_desc, goal_desc, constr_desc
 
@@ -62,6 +65,7 @@ def main():
     parser.add_argument('--goals', type=int, default=-1, help='Number of goals')
     parser.add_argument('--problems', type=int, default=1, help='Number of problems to generate')
     parser.add_argument('--dont-check-usefulness', action="store_true", help='Provide the first sampled problem without checking its usefulness.')
+    parser.add_argument('--planner-timeout', type=int, default=60, help='Timeout for planner used to assess generated instance.')
     
     args = parser.parse_args()
 
@@ -69,9 +73,10 @@ def main():
     for i in range(1, args.problems + 1):
         if(args.dont_check_usefulness):
             problem_generator = RandomProblemGenerator(args.locations, args.items, args.goals, args.constraints)
-            problem_pddl, _, init_desc, goal_desc, constr_desc = problem_generator.generate_random_instance()
+            problem_generator.generate_random_instance()
+            problem_pddl, _, init_desc, goal_desc, constr_desc = problem_generator.show_pddl()
         else:
-            problem_pddl, init_desc, goal_desc, constr_desc = generate_one_useful_instance(args.locations, args.items, args.goals, args.constraints)
+            problem_pddl, init_desc, goal_desc, constr_desc = generate_one_useful_instance(args.locations, args.items, args.goals, args.constraints, args.planner_timeout)
         
         file_path = f"tmp/{i}.pddl"
         with open(file_path, "w") as file:

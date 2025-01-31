@@ -1,5 +1,7 @@
 import random
 import os
+import math
+from itertools import chain
 
 from . import domains
 from .manipulation_concepts import *
@@ -108,7 +110,7 @@ class SafetyConstraintsGenerator(PredicatesGenerator):
                                 )
                             )
 
-            # Add don't pick plugged-in constraints for random electrical items
+            # Add don't pick plugged-in constraints for electrical items
             if ItemProperty.ELECTRICAL in obj.properties:
                 constraints.append(
                     self._generate_predicate(
@@ -119,14 +121,16 @@ class SafetyConstraintsGenerator(PredicatesGenerator):
         # Add don't plug items in the same location constraints for a random pair of electrical items
         electrical_items = [e for e in self.items if ItemProperty.ELECTRICAL in e.properties]
         if len(electrical_items) > 1:
-            obj1, obj2 = random.sample(electrical_items, 2)
-            constraints.append(
-                self._generate_predicate(
-                    "dont-plug-items-in-same-location",
-                    obj1_name=obj1.name,
-                    obj2_name=obj2.name,
-                )
-            )
+            for obj1 in electrical_items:
+                for obj2 in electrical_items:
+                    if obj2 != obj1:
+                        constraints.append(
+                            self._generate_predicate(
+                                "dont-plug-items-in-same-location",
+                                obj1_name=obj1.name,
+                                obj2_name=obj2.name,
+                            )
+                        )
 
         # For testing purposes
         # constraints.append(self._generate_predicate("impossible-location-constraint", loc_name=self.locations[0].name))
@@ -177,9 +181,12 @@ class RandomGoalGenerator(PredicatesGenerator):
     def generate_random_goals(self):
         goal_state: [(str, str)] = []
 
+        # Do not generate goals for safe containers
+        items = [e for e in self.items if  ItemProperty.SAFE_CONTAINER not in e.properties]
+
         # Generate holding goals
         num_holding_goals = random.randint(0, 1)
-        holding_goal_items = random.sample(self.items, num_holding_goals)
+        holding_goal_items = random.sample(items, num_holding_goals)
         for obj in holding_goal_items:
             goal_state.append(
                 self._generate_predicate(
@@ -188,7 +195,7 @@ class RandomGoalGenerator(PredicatesGenerator):
             )
 
         # Generate location goals
-        loc_goal_items = [e for e in self.items if e not in holding_goal_items]
+        loc_goal_items = [e for e in items if e not in holding_goal_items]
         for obj in loc_goal_items:
             goal_location = random.choice(self.locations)
             goal_state.append(
@@ -198,7 +205,7 @@ class RandomGoalGenerator(PredicatesGenerator):
             )
 
         # Generate plugged in/out goals
-        electrical_items = [e for e in self.items if ItemProperty.ELECTRICAL in e.properties]
+        electrical_items = [e for e in items if ItemProperty.ELECTRICAL in e.properties]
         for obj in electrical_items:
             if random.choice([True, False]):
                 goal_state.append(
@@ -230,6 +237,18 @@ class RandomProblemGenerator:
         self.num_goals = num_goals
         self.num_constraints = num_constraints
 
+    def _generate_random_locations(self):
+        bound_per_cat = self.num_locations / len(LOCATION_CATEGORIES)
+        bound_per_cat = math.ceil(bound_per_cat)
+        locations_bag = list(chain(*[ random.sample(e,bound_per_cat) for e in LOCATION_CATEGORIES ]))
+        return random.sample(locations_bag, self.num_locations)
+
+    def _generate_random_items(self):
+        bound_per_cat = self.num_items / len(ITEM_CATEGORIES)
+        bound_per_cat = math.ceil(bound_per_cat)
+        items_bag = list(chain(*[ random.sample(e,bound_per_cat) for e in ITEM_CATEGORIES ]))
+        return random.sample(items_bag, self.num_items)
+
     def generate_random_instance(self):
 
         # Generate data
@@ -237,8 +256,8 @@ class RandomProblemGenerator:
         all_safety_constraints = []
 
         if(self.num_constraints == -1):
-            locations = random.sample(ALL_LOCATIONS, self.num_locations)
-            items = random.sample(ALL_ITEMS, self.num_items)
+            locations = self._generate_random_locations()
+            items = self._generate_random_items()
 
             init_state_generator = RandomInitialStateGenerator(locations, items)
             initial_state, items_locations = init_state_generator.generate_random_initial_state()
@@ -247,8 +266,8 @@ class RandomProblemGenerator:
             selected_safety_constraints = constraints_generator.generate_safety_constraints()
         else:
             while(len(all_safety_constraints) < self.num_constraints):
-                locations = random.sample(ALL_LOCATIONS, self.num_locations)
-                items = random.sample(ALL_ITEMS, self.num_items)
+                locations = self._generate_random_locations()
+                items = self._generate_random_items()
                 
                 init_state_generator = RandomInitialStateGenerator(locations, items)
                 initial_state, items_locations = init_state_generator.generate_random_initial_state()
@@ -268,30 +287,40 @@ class RandomProblemGenerator:
         electrical_items_names = [e.name for e in items if ItemProperty.ELECTRICAL in e.properties]
         non_electrical_items_names = [e.name for e in items if ItemProperty.ELECTRICAL not in e.properties]
 
-        # Format the PDDL problem
+        self.locations = locations
+        self.non_electrical_items_names = non_electrical_items_names
+        self.electrical_items_names = electrical_items_names
+        self.initial_state = initial_state
+        self.selected_goals = selected_goals
+        self.selected_safety_constraints = selected_safety_constraints
+
+    def show_pddl(self):
+        if not self.locations:
+            raise ValueError("Call generate_random_instance before show_pddl.")
+
         problem = "(define (problem random-manipulation) \n"
         problem += "  (:domain manipulation) \n"
         problem += "  (:objects \n"
-        problem += "    " + " ".join([loc.name for loc in locations]) + " - location \n"
-        if len(non_electrical_items_names) > 0:
-            problem += "    " + " ".join(non_electrical_items_names) + " - item \n"
-        if len(electrical_items_names) > 0:
-            problem += "    " + " ".join(electrical_items_names) + " - electrical-item \n"
+        problem += "    " + " ".join([loc.name for loc in self.locations]) + " - location \n"
+        if len(self.non_electrical_items_names) > 0:
+            problem += "    " + " ".join(self.non_electrical_items_names) + " - item \n"
+        if len(self.electrical_items_names) > 0:
+            problem += "    " + " ".join(self.electrical_items_names) + " - electrical-item \n"
         problem += "  ) \n"
         problem += "  (:init \n"
-        problem += "    " + " \n    ".join([pddl for (pddl, desc) in initial_state]) + " \n"
+        problem += "    " + " \n    ".join([pddl for (pddl, desc) in self.initial_state]) + " \n"
         problem += "  ) \n"
         problem += "  (:goal \n"
         problem += "    (and \n"
-        problem += "      " + " \n      ".join([pddl for (pddl, desc) in selected_goals]) + " \n"
+        problem += "      " + " \n      ".join([pddl for (pddl, desc) in self.selected_goals]) + " \n"
         problem += "    ) \n"
         problem += "  ) \n"
 
         problem_without_constraints = problem + ") \n"
         
-        if selected_safety_constraints:
+        if self.selected_safety_constraints:
             problem += "  (:constraints \n"
-            problem += "    " + " \n    ".join([pddl for (pddl, desc) in selected_safety_constraints]) + " \n"
+            problem += "    " + " \n    ".join([pddl for (pddl, desc) in self.selected_safety_constraints]) + " \n"
             problem += "  ) \n"
 
         problem += ") \n"
@@ -299,13 +328,13 @@ class RandomProblemGenerator:
         # Format natural language descriptions
 
         init_description = "The home includes the following locations: "
-        init_description += ", ".join([loc.name for loc in locations])
+        init_description += ", ".join([loc.name for loc in self.locations])
         init_description += ".\n"
-        init_description += "\n".join([desc for (pddl, desc) in initial_state])
+        init_description += "\n".join([desc for (pddl, desc) in self.initial_state])
 
         goal_description = "The goal is to organize and transport objects to their designated locations.\n"
-        goal_description += "\n".join([desc for (pddl, desc) in selected_goals])
+        goal_description += "\n".join([desc for (pddl, desc) in self.selected_goals])
 
-        constraints_description = "\n".join([desc for (pddl, desc) in selected_safety_constraints])
+        constraints_description = "\n".join([desc for (pddl, desc) in self.selected_safety_constraints])
 
         return problem, problem_without_constraints, init_description, goal_description, constraints_description
