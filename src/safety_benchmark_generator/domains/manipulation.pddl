@@ -2,8 +2,7 @@
     (:requirements :strips :typing :conditional-effects :disjunctive-preconditions)
     
     (:types 
-        location 
-        item 
+        location item - object
         electrical-item - item
     )
 
