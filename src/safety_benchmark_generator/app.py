@@ -1,58 +1,37 @@
 import argparse
 import os
+import logging
+import warnings
 
-from llm_planners import planners
 from . import domains
-from planning_eval_framework.plan_evaluator import PlanEvaluator
-from .problem_generator import RandomProblemGenerator
+from .problem_generator import RandomProblemGenerator, UsefulnessChecker
+
+logging.basicConfig()
+handle = "safety-benchmark-generator"
+logger = logging.getLogger(handle)
+logger.setLevel(logging.INFO)
 
 MANIPULATION_DOMAIN = domains.Manipulation()
-
-def is_useful_instance(pddl_problem, pddl_problem_wo_constraints, init_desc, goal_desc, constr_desc, timeout):
-    pddl_domain = MANIPULATION_DOMAIN.get_domain_pddl()
-
-    sol_wo_constraints = planners.run_fast_downward_planner(pddl_domain, pddl_problem_wo_constraints, optimality=True, heuristic="hmax()", timeout=timeout)
-    print("wo/constraints optimal finished")
-    length_sol_wo_constraints = 0 if sol_wo_constraints is None else len(sol_wo_constraints.splitlines())
-
-    if length_sol_wo_constraints == 0:
-        return False
-    elif is_safety_non_trivial_1(pddl_problem, length_sol_wo_constraints, timeout=timeout):
-        sol_constraints = planners.run_fast_downward_planner(pddl_domain, pddl_problem, optimality=False, timeout=timeout)
-        sol_constraints_length = 0 if sol_constraints is None else len(sol_constraints.splitlines())
-        print("w/constraints non optimal finished")
-        if sol_constraints is not None:
-            return True
-    
-    return False
-
-def is_safety_non_trivial_1(pddl_problem, length_sol_wo_constraints, timeout):
-    pddl_domain = MANIPULATION_DOMAIN.get_domain_pddl()
-
-    sol_constraints_bounded = planners.run_fast_downward_planner(pddl_domain, pddl_problem, optimality=True, bound=length_sol_wo_constraints+1, timeout=timeout)
-    print("w/constraints bounded optimal finished")
-
-    return sol_constraints_bounded is None
-
-# def is_safety_non_trivial_2(pddl_problem, pddl_problem_wo_constraints, init_desc, goal_desc, constr_desc):
-#     pddl_domain = MANIPULATION_DOMAIN.get_domain_pddl()
-
-#     sol_wo_constraints = planners.run_fast_downward_planner(pddl_domain, pddl_problem_wo_constraints, optimality=True, heuristic="hmax()")
-#     print("wo/constraints optimal finished")
-    
-#     evaluator = PlanEvaluator(pddl_domain, pddl_problem, sol_wo_constraints)
-#     evaluator.try_simulation()
-#     return not evaluator.is_safe()
 
 def generate_one_useful_instance(num_locations, num_items, num_goals, num_constraints, planner_timeout):
     pddl_problem = None
     useful = False
     while(not useful):
-        print("Trying...")
+        logger.info("Generating random instance...")
         problem_generator = RandomProblemGenerator(num_locations, num_items, num_goals, num_constraints)
-        problem_generator.generate_random_instance()
-        pddl_problem, pddl_problem_wo_constraints, init_desc, goal_desc, constr_desc = problem_generator.show_pddl()
-        useful = is_useful_instance(pddl_problem, pddl_problem_wo_constraints, init_desc, goal_desc, constr_desc, timeout=planner_timeout)
+        problem = problem_generator.generate_random_instance()
+        
+        uchecker = UsefulnessChecker(problem, planner_timeout=planner_timeout)
+        logger.info("Gathering useful constraints...")
+        useful_constraints = uchecker.get_useful_constraints()
+        if len(useful_constraints) != 0:
+            logger.info("Checking if constraints are solvable...")
+            if uchecker.is_solvable(useful_constraints):
+                useful = True
+                logger.info("Constraints are solvable!")
+        problem.constraints = useful_constraints
+        pddl_problem = problem.show_pddl()
+        init_desc, goal_desc, constr_desc = problem.show_nl()
 
     return pddl_problem, init_desc, goal_desc, constr_desc
 
@@ -68,6 +47,9 @@ def main():
     parser.add_argument('--planner-timeout', type=int, default=60, help='Timeout for planner used to assess generated instance.')
     
     args = parser.parse_args()
+
+    if(args.constraints != -1):
+        warnings.warn("--constraints passed but won't have any effect.")
 
     os.makedirs("tmp", exist_ok=True)
     for i in range(1, args.problems + 1):
