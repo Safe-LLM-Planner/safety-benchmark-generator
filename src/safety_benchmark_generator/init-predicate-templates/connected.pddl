@@ -1,0 +1,1 @@
+(connected {location1_name} {location2_name}) 

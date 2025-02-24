@@ -1,0 +1,1 @@
+{location1_name} is connected to {location2_name}. 

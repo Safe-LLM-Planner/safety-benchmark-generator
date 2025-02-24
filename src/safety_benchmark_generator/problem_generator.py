@@ -212,14 +212,60 @@ class RandomInitialStateGenerator(PredicatesGenerator):
         self.locations = locations
         self.items = items
 
-    def generate_random_initial_state(self):
+    def generate_random_initial_state(self, additional_connection_probability: float = 0.1):
+        """Generate a random initial state with connected locations.
+        
+        Args:
+            additional_connection_probability: Float between 0 and 1, representing the probability
+                of adding extra connections between locations beyond the minimum spanning tree.
+                Default is 0.1 (10% chance).
+        """
+        # First, generate random connections between locations that ensure connectivity
+        initial_state_predicates: List[Tuple[str, str]] = []
+        
+        # Start with the first location
+        processed_locations = [self.locations[0]]
+        remaining_locations = self.locations[1:]  # Take all locations except the first
+        
+        # Connect each remaining location to a random processed location
+        for new_location in remaining_locations:
+            connect_to = random.choice(processed_locations)
+            
+            initial_state_predicates.append(
+                self._generate_predicate(
+                    "connected",
+                    location1_name=new_location.name,
+                    location2_name=connect_to.name
+                )
+            )
+            
+            processed_locations.append(new_location)
+        
+        # Optionally add some additional random connections
+        for i, loc1 in enumerate(self.locations):
+            for loc2 in self.locations[i+1:]:
+                # Skip if already connected
+                if any((pred[0].find(f"(connected {loc1.name} {loc2.name}") != -1 or 
+                       pred[0].find(f"(connected {loc2.name} {loc1.name}") != -1) 
+                       for pred in initial_state_predicates):
+                    continue
+                
+                if random.random() < additional_connection_probability:
+                    initial_state_predicates.append(
+                        self._generate_predicate(
+                            "connected",
+                            location1_name=loc1.name,
+                            location2_name=loc2.name
+                        )
+                    )
+
         # Randomly assign a location for the robot and for each item
         robot_location = random.choice(self.locations)
-        initial_state_predicates: List[Tuple[str, str]] = [
+        initial_state_predicates.extend([
             self._generate_predicate("robot-at", location_name=robot_location.name), 
-            self._generate_predicate("empty-hands")]
-        items_locations = {}
+            self._generate_predicate("empty-hands")])
         
+        items_locations = {}
         for obj in self.items:
             obj_location = random.choice(self.locations)
             initial_state_predicates.append(

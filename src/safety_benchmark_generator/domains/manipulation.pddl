@@ -15,12 +15,17 @@
         (holding-right ?o - item)  ; Object held in right hand
         (holding-both ?o - item)  ; Object held in both hand
         (plugged-in ?e - electrical-item)
+        (connected ?l1 ?l2 - location)  ; To define connected locations
     )
 
     (:action go-to
         :parameters (?from ?to - location)
-        :precondition (and (robot-at ?from))
-         :effect (and (robot-at ?to)
+        :precondition (and 
+            (robot-at ?from)
+            (or (connected ?from ?to)  ; Either direction of connection works
+                (connected ?to ?from))
+        )
+        :effect (and (robot-at ?to)
                      (not (robot-at ?from))
                      (forall (?e - electrical-item)
                         (and
